@@ -21,6 +21,8 @@ import (
 	"testing"
 )
 
+// For now Tests will not work
+
 func TestRoutingCore(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/", nil)
 	res := httptest.NewRecorder()

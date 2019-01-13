@@ -32,7 +32,7 @@ func (r *Router) Add(url string, handler func(http.ResponseWriter, *http.Request
 }
 
 // Start - start the server indicating the listening port
-func (r *Router) Start(port string) {
+func (r *Router) Start() {
 	r.Index = newIndex()
 	r.Index.compile(r.routes)
 	// The actual server will use fasthttp

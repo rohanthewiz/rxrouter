@@ -5,9 +5,8 @@ package rxrouter
 // Server
 
 import (
-	//"fmt"
 	"net/http"
-	"github.com/rohanthewiz/rxrouter/bxog"
+	"github.com/rohanthewiz/rxrouter/bxog
 )
 
 type RxRouter struct {
