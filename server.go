@@ -5,33 +5,39 @@ package rxrouter
 // Server
 
 import (
-	"net/http"
-	"github.com/rohanthewiz/rxrouter/bxog
+	"github.com/rohanthewiz/rxrouter/bxog"
+	"github.com/valyala/fasthttp"
 )
 
 type RxRouter struct {
-	BxRtr *bxog.Router
+	Mux *bxog.Mux
+	//FhRtr *fasthttp.
 }
 
 func New() *RxRouter {
-	return &RxRouter{}
+	mx := &bxog.Mux{}
+
+	return &RxRouter{ Mux: mx }
 }
 
 func (rx *RxRouter) Start() {
-	rx.BxRtr.Start() // create new index; compile routes
+	rx.Mux.Load() // create new index; compile routes
+
+	reqHandler := func(ctx *fasthttp.RequestCtx) {
+		if route := rx.Mux.Index.FindTree(ctx); route != nil {
+			route.Handler(ctx, rx.Mux)
+		} else {
+			rx.Default(ctx)
+		}
+
+		//fmt.Fprintf(ctx, "Hello, world! Requested path is %q", ctx.Path())
+	}
+
+	fasthttp.ListenAndServe(":3200", reqHandler)
 }
 
-// ServeHTTP looks for a matching route
-func (rx *RxRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if route := rx.BxRtr.Index.FindTree(req); route != nil {
-		route.Handler(w, req, rx.BxRtr)
-	} else {
-		rx.Default(w, req)
-	}
-}
 
 // Default Handler
-func (rx *RxRouter) Default(w http.ResponseWriter, req *http.Request) {
-	// w.WriteHeader(404)
-	http.Error(w, "Page not found", 404)
+func (rx *RxRouter) Default(ctx *fasthttp.RequestCtx) {
+	ctx.SetStatusCode(fasthttp.StatusNotFound)
 }

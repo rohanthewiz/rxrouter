@@ -1,3 +1,4 @@
+// Copyright 2017 Rohan Allison.
 // Copyright © 2016-2018 Eduard Sesigin. All rights reserved. Contacts: <claygod@yandex.ru>
 
 package bxog
@@ -5,19 +6,18 @@ package bxog
 // Index
 
 import (
-	//"fmt"
-	"net/http"
 	"strings"
+	"github.com/valyala/fasthttp"
 )
 
-// Router using the index selects the route
+// Mux using the index selects the route
 type index struct {
 	tree       *node
 	index      map[typeHash]route
 	listShifts [DELIMITER_IN_LIST]int
 	listRoutes []*route
 	coreRoute  *route
-	findMethod func(*http.Request) *route
+	findMethod func(*fasthttp.RequestCtx) *route
 }
 
 func newIndex() *index {
@@ -137,9 +137,9 @@ func (x *index) fillNode(n *node, shiftLeft int) int {
 	return 0
 }
 
-func (x *index) findShift(req *http.Request) *route {
+func (x *index) findShift(ctx *fasthttp.RequestCtx) *route {
 	cHashes := [HTTP_SECTION_COUNT]typeHash{}
-	level := x.genUintSlice(req.URL.Path, x.genSalt(req.Method), &cHashes)
+	level := x.genUintSlice(string(ctx.Path()), x.genSalt(string(ctx.Method())), &cHashes)
 	if level == 0 && cHashes[0] == SLASH_HASH { //
 		return x.coreRoute
 	} else if level > 1 && cHashes[level-1] == SLASH_HASH { // 140
@@ -179,9 +179,9 @@ func (x *index) find2X(curLevel int, curShift int, curHash typeHash) int {
 	}
 }
 
-func (x *index) FindTree(req *http.Request) *route {
+func (x *index) FindTree(ctx *fasthttp.RequestCtx) *route {
 	cHashes := [HTTP_SECTION_COUNT]typeHash{}
-	level := x.genUintSlice(req.URL.Path, x.genSalt(req.Method), &cHashes)
+	level := x.genUintSlice(string(ctx.Path()), x.genSalt(string(ctx.Method())), &cHashes)
 	if level == 0 && x.coreRoute != nil {
 		return x.coreRoute
 	}

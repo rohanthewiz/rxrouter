@@ -5,20 +5,20 @@ package bxog
 // route
 
 import (
-	"net/http"
 	"strings"
+	"github.com/valyala/fasthttp"
 )
 
 // The route for URL
 type route struct {
 	id       string // added by the user
 	method   string
-	Handler  func(http.ResponseWriter, *http.Request, *Router)
+	Handler  func(*fasthttp.RequestCtx, *Mux)
 	sections []*section
 	url      string
 }
 
-func (r *Router) newRoute(url string, handler func(http.ResponseWriter, *http.Request, *Router), method string) *route {
+func (m *Mux) newRoute(url string, handler func(*fasthttp.RequestCtx, *Mux), method string) *route {
 	route := &route{
 		url,
 		method,
@@ -27,7 +27,7 @@ func (r *Router) newRoute(url string, handler func(http.ResponseWriter, *http.Re
 		url,
 	}
 	route.setSections(url)
-	r.routes = append(r.routes, route)
+	m.routes = append(m.routes, route)
 	return route
 }
 
