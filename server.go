@@ -5,18 +5,24 @@ package rxrouter
 // Server
 
 import (
+	"fmt"
 	"github.com/rohanthewiz/rxrouter/bxog"
 	"github.com/valyala/fasthttp"
 )
 
 type RxRouter struct {
 	Mux *bxog.Mux
-	//FhRtr *fasthttp.
 }
 
 func New() *RxRouter {
 	mx := &bxog.Mux{}
-
+	mx.Add("/", func (ctx *fasthttp.RequestCtx, mx *bxog.Mux) {
+		_, _ = fmt.Fprintf(ctx, "Hello, world! Requested path is %q", ctx.Path())
+	})
+	mx.Add("/abc", func (ctx *fasthttp.RequestCtx, mx *bxog.Mux) {
+		_, _ = fmt.Fprintf(ctx, "Hello ABC! Requested path is %q", ctx.Path())
+	})
+	
 	return &RxRouter{ Mux: mx }
 }
 
@@ -29,8 +35,6 @@ func (rx *RxRouter) Start() {
 		} else {
 			rx.Default(ctx)
 		}
-
-		//fmt.Fprintf(ctx, "Hello, world! Requested path is %q", ctx.Path())
 	}
 
 	fasthttp.ListenAndServe(":3200", reqHandler)
