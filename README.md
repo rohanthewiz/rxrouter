@@ -9,12 +9,7 @@ All credit goes to [Valyala] (https://github.com/valyala) and [Claygod] (https:/
 ## Usage
 
 An example of using the multiplexer:
-
-```go
-package main
-
-//Coming soon
-````
+See: https://github.com/rohanthewiz/rxrun
 
 # Settings
 
