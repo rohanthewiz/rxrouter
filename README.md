@@ -52,6 +52,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 	"github.com/rohanthewiz/rxrouter"
 	"github.com/rohanthewiz/rxrouter/mux"
 	"github.com/valyala/fasthttp"
@@ -59,12 +60,22 @@ import (
 
 func main() {
 	rx := rxrouter.New()
+	
+	// Rudimentary request logging middleware
+	rx.Use(func(ctx *fasthttp.RequestCtx) (retCtx *fasthttp.RequestCtx, ok bool) {
+		_, _ = fmt.Fprintf(ctx, "Time: %s, Request path: %s", time.Now().String(), ctx.Path())
+		return ctx, true
+	}, 503)
+	
+	// Add some routes
 	rx.Mux.Add("/", func (ctx *fasthttp.RequestCtx, mx *mux.Mux) {
 		_, _ = fmt.Fprintf(ctx, "Hello, world! Requested path is %q", ctx.Path())
 	})
 	rx.Mux.Add("/abc", func (ctx *fasthttp.RequestCtx, mx *mux.Mux) {
 		_, _ = fmt.Fprintf(ctx, "Hello ABC! Requested path is %q", ctx.Path())
 	})
+	
+	// Let it rip!
 	rx.Start("3020")
 }
 ```
