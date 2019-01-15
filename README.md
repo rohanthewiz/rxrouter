@@ -53,19 +53,19 @@ package main
 import (
 	"fmt"
 	"github.com/rohanthewiz/rxrouter"
-	"github.com/rohanthewiz/rxrouter/bxog"
+	"github.com/rohanthewiz/rxrouter/mux"
 	"github.com/valyala/fasthttp"
 )
 
 func main() {
 	rx := rxrouter.New()
-	rx.Mux.Add("/", func (ctx *fasthttp.RequestCtx, mx *bxog.Mux) {
+	rx.Mux.Add("/", func (ctx *fasthttp.RequestCtx, mx *mux.Mux) {
 		_, _ = fmt.Fprintf(ctx, "Hello, world! Requested path is %q", ctx.Path())
 	})
-	rx.Mux.Add("/abc", func (ctx *fasthttp.RequestCtx, mx *bxog.Mux) {
+	rx.Mux.Add("/abc", func (ctx *fasthttp.RequestCtx, mx *mux.Mux) {
 		_, _ = fmt.Fprintf(ctx, "Hello ABC! Requested path is %q", ctx.Path())
 	})
-	rx.Start()
+	rx.Start("3020")
 }
 ```
 

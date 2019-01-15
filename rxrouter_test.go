@@ -12,7 +12,7 @@ package rxrouter
 //   ▌▀▀▀▌▐█░░▌░░░░░░▌
 //   ▌░░░▌░█▄ ▌░░░░░░▌
 //
-// Copyright © 2016-2018 Eduard Sesigin. Contacts: <claygod@yandex.ru>
+// Original Copyright © 2016-2018 Eduard Sesigin. Contacts: <claygod@yandex.ru>
 
 import (
 	"io"

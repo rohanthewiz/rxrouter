@@ -1,6 +1,6 @@
-// Copyright © 2016-2018 Eduard Sesigin. All rights reserved. Contacts: <claygod@yandex.ru>
+// Original Copyright © 2016-2018 Eduard Sesigin. All rights reserved. Contacts: <claygod@yandex.ru>
 
-package bxog
+package mux
 
 // Section
 

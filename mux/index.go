@@ -1,7 +1,7 @@
-// Copyright 2017 Rohan Allison.
-// Copyright © 2016-2018 Eduard Sesigin. All rights reserved. Contacts: <claygod@yandex.ru>
+// Copyright 2019 Rohan Allison.
+// Original Copyright © 2016-2018 Eduard Sesigin. All rights reserved. Contacts: <claygod@yandex.ru>
 
-package bxog
+package mux
 
 // Index
 
