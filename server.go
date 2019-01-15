@@ -1,5 +1,4 @@
 // Copyright 2019 - Rohan Allison.
-// Original Copyright © 2016-2018 Eduard Sesigin. All rights reserved. Contacts: <claygod@yandex.ru>
 
 package rxrouter
 
@@ -11,11 +10,16 @@ import (
 )
 
 type RxRouter struct {
-	Mux         *mux.Mux
+	Options     Options
+	mux         *mux.Mux
 	middlewares []MiddleWare
 }
 
-type RouteHandler func(*fasthttp.RequestCtx, *mux.Mux)
+type Options struct {
+	Verbose bool
+}
+
+type RouteHandler func(*fasthttp.RequestCtx, map[string]string)
 
 type MiddleWareFunc func(ctx *fasthttp.RequestCtx) (ok bool)
 
@@ -24,9 +28,13 @@ type MiddleWare struct {
 	FailCode int
 }
 
-func New() *RxRouter {
+func New(opts ...Options) *RxRouter {
 	mx := &mux.Mux{}
-	return &RxRouter{Mux: mx}
+	r := RxRouter{mux: mx}
+	if len(opts) > 0 {
+		r.Options = opts[0]
+	}
+	return &r
 }
 
 func (rx *RxRouter) Use(m MiddleWareFunc, failCode int) {
@@ -34,8 +42,10 @@ func (rx *RxRouter) Use(m MiddleWareFunc, failCode int) {
 }
 
 func (rx *RxRouter) Start(port string) {
-	fmt.Println("Compiling routes...")
-	rx.Mux.Load() // create new index; compile routes
+	if rx.Options.Verbose {
+		fmt.Println("Compiling routes...")
+	}
+	rx.mux.Load() // create new index; compile routes
 
 	var reqHandler fasthttp.RequestHandler
 	reqHandler = func(ctx *fasthttp.RequestCtx) {
@@ -49,14 +59,20 @@ func (rx *RxRouter) Start(port string) {
 			}
 		}
 
-		if route := rx.Mux.Index.FindTree(ctx); route != nil {
-			route.Handler(ctx, rx.Mux)
+		if route := rx.mux.Index.FindTree(ctx); route != nil {
+			fmt.Printf("route is: %s\n", route.Url())
+			route.Handler(ctx, rx.mux.Params(ctx, route.Url()))
 		} else {
+			if rx.Options.Verbose {
+				fmt.Println("Unknown route", string(ctx.Path()))
+			}
 			rx.Default(ctx)
 		}
 	}
 
-	fmt.Println("RxRouter is listening on port " + port)
+	if rx.Options.Verbose {
+		fmt.Println("RxRouter is listening on port " + port)
+	}
 	log.Fatal(fasthttp.ListenAndServe(":"+port, reqHandler))
 }
 
@@ -66,5 +82,5 @@ func (rx *RxRouter) Default(ctx *fasthttp.RequestCtx) {
 }
 
 func (rx *RxRouter) Add(path string, handler RouteHandler) {
-	rx.Mux.Add(path, handler)
+	rx.mux.Add(path, handler)
 }

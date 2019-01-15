@@ -6,11 +6,11 @@ package mux
 // Index
 
 import (
-	"strings"
 	"github.com/valyala/fasthttp"
+	"strings"
 )
 
-// Mux using the index selects the route
+// mux using the index selects the route
 type index struct {
 	tree       *node
 	index      map[typeHash]route

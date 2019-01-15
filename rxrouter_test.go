@@ -1,5 +1,6 @@
 package rxrouter
 
+/// TODO - Fix these tests
 // Test
 // Check the operation of the different modes of the multiplexer Bxog
 //
@@ -15,6 +16,8 @@ package rxrouter
 // Original Copyright © 2016-2018 Eduard Sesigin. Contacts: <claygod@yandex.ru>
 
 import (
+	"github.com/rohanthewiz/rxrouter/mux"
+	"github.com/valyala/fasthttp"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -22,13 +25,14 @@ import (
 )
 
 // For now Tests will not work
+// We'll fix these later
 
 func TestRoutingCore(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/", nil)
 	res := httptest.NewRecorder()
-	muxx := New()
-	muxx.Add("/", func(rw http.ResponseWriter, req *http.Request, r *Router) { req.Method = "CORE!" }).Method("GET")
-	muxx.Test()
+	rx := New()
+	rx.mux.Add("/", func(ctx *fasthttp.RequestCtx, params map[string]string) { req.Method = "CORE!" }).Method("GET")
+	rx.mux.Test()
 	muxx.ServeHTTP(res, req)
 
 	if req.Method != "CORE!" {

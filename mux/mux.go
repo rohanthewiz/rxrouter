@@ -2,13 +2,13 @@
 
 package mux
 
-// Mux
+// mux
 
 import (
 	"github.com/valyala/fasthttp"
 )
 
-// Mux Bxog is a simple and fast HTTP router for Go (HTTP request multiplexer).
+// mux Bxog is a simple and fast HTTP router for Go (HTTP request multiplexer).
 type Mux struct {
 	routes []*route
 	Index  *index
@@ -21,7 +21,7 @@ func New() *Mux {
 }
 
 // Add - add a rule specifying the handler (the default method - GET, ID - as a string to this rule)
-func (m *Mux) Add(url string, handler func(*fasthttp.RequestCtx, *Mux)) *route {
+func (m *Mux) Add(url string, handler func(*fasthttp.RequestCtx, map[string]string)) *route {
 	if len(url) > HTTP_PATTERN_COUNT {
 		panic("URL is too long")
 	} else {
@@ -29,7 +29,7 @@ func (m *Mux) Add(url string, handler func(*fasthttp.RequestCtx, *Mux)) *route {
 	}
 }
 
-// Start the Mux
+// Start the mux
 func (m *Mux) Load() {
 	m.Index = newIndex()
 	m.Index.compile(m.routes)
@@ -48,7 +48,7 @@ func (m *Mux) Load() {
 }
 
 // Shutdown - graceful stop the server
-//func (m *Mux) Shutdown() error {
+//func (m *mux) Shutdown() error {
 //	if m.server == nil {
 //		return fmt.Errorf("The server is not running and therefore cannot be stopped.")
 //	}
@@ -56,7 +56,7 @@ func (m *Mux) Load() {
 //}
 //
 //// Stop - aggressive stop the server
-//func (m *Mux) Stop() error {
+//func (m *mux) Stop() error {
 //	if m.server == nil {
 //		return fmt.Errorf("The server is not running and therefore cannot be stopped.")
 //	}
@@ -79,7 +79,7 @@ func (m *Mux) Params(ctx *fasthttp.RequestCtx, id string) map[string]string {
 
 // GenerateURL - generate URL of the available options
 // Hmm TODO - let'server rename this according to what it does
-//func (r *Mux) GenerateURL(id string, param map[string]string) string {
+//func (r *mux) GenerateURL(id string, param map[string]string) string {
 //	out := ""
 //	if route, ok := r.Index.index[r.Index.genUint(id, 0)]; ok {
 //		for _, section := range route.sections {

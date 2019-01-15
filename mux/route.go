@@ -13,12 +13,12 @@ import (
 type route struct {
 	id       string // added by the user
 	method   string
-	Handler  func(*fasthttp.RequestCtx, *Mux)
+	Handler  func(*fasthttp.RequestCtx, map[string]string)
 	sections []*section
 	url      string
 }
 
-func (m *Mux) newRoute(url string, handler func(*fasthttp.RequestCtx, *Mux), method string) *route {
+func (m *Mux) newRoute(url string, handler func(*fasthttp.RequestCtx, map[string]string), method string) *route {
 	route := &route{
 		url,
 		method,
@@ -48,6 +48,10 @@ func (r *route) Method(value string) *route {
 func (r *route) Id(value string) *route {
 	r.id = value
 	return r
+}
+
+func (r *route) Url() string {
+	return r.url
 }
 
 func (r *route) parseUrl(url string) []*section {
