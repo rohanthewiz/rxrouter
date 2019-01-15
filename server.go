@@ -11,16 +11,16 @@ import (
 )
 
 type RxRouter struct {
-	Mux *mux.Mux
+	Mux         *mux.Mux
 	middlewares []MiddleWare
 }
 
 type RouteHandler func(*fasthttp.RequestCtx, *mux.Mux)
 
-type MiddleWareFunc func(ctx *fasthttp.RequestCtx) (*fasthttp.RequestCtx, bool) // bool here for (ok?)
+type MiddleWareFunc func(ctx *fasthttp.RequestCtx) (ok bool)
 
 type MiddleWare struct {
-	MidFunc MiddleWareFunc
+	MidFunc  MiddleWareFunc
 	FailCode int
 }
 
@@ -30,7 +30,7 @@ func New() *RxRouter {
 }
 
 func (rx *RxRouter) Use(m MiddleWareFunc, failCode int) {
-	rx.middlewares = append(rx.middlewares, MiddleWare{ MidFunc: m, FailCode: failCode })
+	rx.middlewares = append(rx.middlewares, MiddleWare{MidFunc: m, FailCode: failCode})
 }
 
 func (rx *RxRouter) Start(port string) {
@@ -41,10 +41,9 @@ func (rx *RxRouter) Start(port string) {
 	reqHandler = func(ctx *fasthttp.RequestCtx) {
 
 		// Run middlewares - they modify ctx or fail
-
 		var ok bool
 		for _, mw := range rx.middlewares {
-			if ctx, ok = mw.MidFunc(ctx); !ok {
+			if ok = mw.MidFunc(ctx); !ok {
 				ctx.SetStatusCode(mw.FailCode) // for now
 				return
 			}
@@ -58,7 +57,7 @@ func (rx *RxRouter) Start(port string) {
 	}
 
 	fmt.Println("RxRouter is listening on port " + port)
-	log.Fatal(fasthttp.ListenAndServe(":" + port, reqHandler))
+	log.Fatal(fasthttp.ListenAndServe(":"+port, reqHandler))
 }
 
 // Default Handler
