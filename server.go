@@ -3,6 +3,7 @@
 package rxrouter
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/rohanthewiz/rxrouter/mux"
 	"github.com/valyala/fasthttp"
@@ -17,6 +18,13 @@ type RxRouter struct {
 
 type Options struct {
 	Verbose bool
+	AssetPaths []AssetPath
+}
+
+type AssetPath struct {
+	Prefix []byte // url prefix
+	FileSystemRoot string // file locations
+	StripSlashes int // how many slash words to strip from the url prefix
 }
 
 type RouteHandler func(*fasthttp.RequestCtx, map[string]string)
@@ -48,9 +56,10 @@ func (rx *RxRouter) Start(port string) {
 	rx.mux.Load() // create new index; compile routes
 
 	var reqHandler fasthttp.RequestHandler
-	reqHandler = func(ctx *fasthttp.RequestCtx) {
 
-		// Run middlewares - they modify ctx or fail
+	// Master handler - select and run a handler on the passed ctx
+	reqHandler = func(ctx *fasthttp.RequestCtx) {
+		// Middleware - they modify ctx or fail
 		var ok bool
 		for _, mw := range rx.middlewares {
 			if ok = mw.MidFunc(ctx); !ok {
@@ -59,6 +68,14 @@ func (rx *RxRouter) Start(port string) {
 			}
 		}
 
+		// See if we match a file handler
+		fileHander, ok := rx.GetFSHandler(ctx)
+		if ok {
+			fileHander(ctx)
+			return
+		}
+
+		// Lookup
 		if route := rx.mux.Index.FindTree(ctx); route != nil {
 			fmt.Printf("route is: %s\n", route.Url())
 			route.Handler(ctx, rx.mux.Params(ctx, route.Url()))
@@ -74,6 +91,17 @@ func (rx *RxRouter) Start(port string) {
 		fmt.Println("RxRouter is listening on port " + port)
 	}
 	log.Fatal(fasthttp.ListenAndServe(":"+port, reqHandler))
+}
+
+// See if we match a file handler - First match is the one we use
+func (rx *RxRouter) GetFSHandler(ctx *fasthttp.RequestCtx) (handler fasthttp.RequestHandler, ok bool) {
+	path := ctx.Path()
+	for _, astPath := range rx.Options.AssetPaths {
+		if bytes.HasPrefix(path, astPath.Prefix) {
+			return fasthttp.FSHandler(astPath.FileSystemRoot, astPath.StripSlashes), true
+		}
+	}
+	return
 }
 
 // Default Handler
