@@ -23,8 +23,8 @@ type RxRouter struct {
 
 type Options struct {
 	Verbose    bool
-	Port string
-	TLSCfg *tls.Config
+	Port       string
+	TLSCfg     *tls.Config
 	assetPaths []AssetPath
 }
 
@@ -104,11 +104,15 @@ func (rx *RxRouter) Start() {
 	if rx.Options.Verbose {
 		fmt.Println("RxRouter is listening on port " + rx.Options.Port)
 	}
-	if rx.Options.Port == "" { rx.Options.Port = defaultPort }
+	if rx.Options.Port == "" {
+		rx.Options.Port = defaultPort
+	}
 
 	if rx.Options.TLSCfg != nil {
-		if rx.Options.Port == "" { rx.Options.Port = defaultTLSPort }
-		ln, err := net.Listen("tcp4", "0.0.0.0." + rx.Options.Port)
+		if rx.Options.Port == "" {
+			rx.Options.Port = defaultTLSPort
+		}
+		ln, err := net.Listen("tcp4", "0.0.0.0:"+rx.Options.Port)
 		if err != nil {
 			panic(err)
 		} // todo - better handling of err
