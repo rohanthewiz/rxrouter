@@ -44,7 +44,7 @@ func TestRouting(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/b/12345", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/a/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { req.Method = "ERR" }).Method("GET")
+	muxx.AddRoute("/a/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { req.Method = "ERR" }).Method("GET")
 	muxx.Test()
 	muxx.ServeHTTP(res, req)
 
@@ -57,7 +57,7 @@ func TestError404(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/b/12345", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/a/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(777) }).Method("GET")
+	muxx.AddRoute("/a/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(777) }).Method("GET")
 	muxx.Test()
 	muxx.ServeHTTP(res, req)
 
@@ -70,7 +70,7 @@ func TestRoutingMethod(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/a/12345", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/a/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(777) }).Method("GET")
+	muxx.AddRoute("/a/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(777) }).Method("GET")
 	muxx.Test()
 	muxx.ServeHTTP(res, req)
 
@@ -84,8 +84,8 @@ func TestRoutingPathStatic(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/a/b", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/a", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(777) }).Method("GET")
-	muxx.Add("/a/b", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(778) }).Method("GET")
+	muxx.AddRoute("/a", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(777) }).Method("GET")
+	muxx.AddRoute("/a/b", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(778) }).Method("GET")
 	muxx.Test()
 	muxx.ServeHTTP(res, req)
 
@@ -99,8 +99,8 @@ func TestRoutingPathDinamic(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/a/b", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/a", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(777) }).Method("GET")
-	muxx.Add("/a/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(778) }).Method("GET")
+	muxx.AddRoute("/a", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(777) }).Method("GET")
+	muxx.AddRoute("/a/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(778) }).Method("GET")
 	muxx.Test()
 	muxx.ServeHTTP(res, req)
 
@@ -113,9 +113,9 @@ func TestDefaultMethodGet(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/abc", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/ab", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(700) })
-	muxx.Add("/abc", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(701) })
-	muxx.Add("/abcd", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(702) })
+	muxx.AddRoute("/ab", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(700) })
+	muxx.AddRoute("/abc", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(701) })
+	muxx.AddRoute("/abcd", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(702) })
 	muxx.Test()
 	muxx.ServeHTTP(res, req)
 
@@ -128,7 +128,7 @@ func TestGetParam(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/abc/123", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/abc/:par", func(w http.ResponseWriter, req *http.Request, r *Router) {
+	muxx.AddRoute("/abc/:par", func(w http.ResponseWriter, req *http.Request, r *Router) {
 		params := r.Params(req, "/abc/:par")
 		req.Method = params["par"]
 
@@ -145,7 +145,7 @@ func TestCreateUrl(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/abc/f", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/abc/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) {}).Id("test")
+	muxx.AddRoute("/abc/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) {}).Id("test")
 	muxx.Test()
 	muxx.ServeHTTP(res, req)
 	if muxx.Create("test", map[string]string{"par": "456"}) != "/abc/456" {
@@ -158,7 +158,7 @@ func TestDefaultId(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/abc/f", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/abc/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) {})
+	muxx.AddRoute("/abc/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) {})
 	muxx.Test()
 	muxx.ServeHTTP(res, req)
 	if muxx.Create("/abc/:par", map[string]string{"par": "456"}) != "/abc/456" {
@@ -171,8 +171,8 @@ func TestRouteSlash(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(777) })
-	muxx.Add("/abc", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(700) })
+	muxx.AddRoute("/", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(777) })
+	muxx.AddRoute("/abc", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(700) })
 	muxx.Test()
 	muxx.ServeHTTP(res, req)
 	if res.Code != 777 {
@@ -184,7 +184,7 @@ func TestMultipleRoutingVariables(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/abc/p1/p2", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/abc/:par1/:par2", func(rw http.ResponseWriter, req *http.Request, r *Router) {
+	muxx.AddRoute("/abc/:par1/:par2", func(rw http.ResponseWriter, req *http.Request, r *Router) {
 		params := r.Params(req, "two")
 		req.Method = params["par1"] + params["par2"]
 	}).Id("two")
@@ -199,7 +199,7 @@ func TestRoutingVariable(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/123", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/:abc", func(rw http.ResponseWriter, req *http.Request, r *Router) {
+	muxx.AddRoute("/:abc", func(rw http.ResponseWriter, req *http.Request, r *Router) {
 		params := r.Params(req, "/:abc")
 		req.Method = params["abc"]
 	})
@@ -215,7 +215,7 @@ func TestSlashEnd(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/abc/", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/abc", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(777) })
+	muxx.AddRoute("/abc", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(777) })
 	muxx.Test()
 	muxx.ServeHTTP(res, req)
 	if res.Code == 777 {
@@ -227,9 +227,9 @@ func TestMoreRoutes(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/b/123/d", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/a/:par/d", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(700) })
-	muxx.Add("/b/:par/d", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(701) })
-	muxx.Add("/abc/def/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(702) })
+	muxx.AddRoute("/a/:par/d", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(700) })
+	muxx.AddRoute("/b/:par/d", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(701) })
+	muxx.AddRoute("/abc/def/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(702) })
 	muxx.Test()
 	muxx.ServeHTTP(res, req)
 
@@ -242,10 +242,10 @@ func TestFool(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/a/xx/123", nil)
 	res := httptest.NewRecorder()
 	muxx := New()
-	muxx.Add("/country/:par/money/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(699) })
-	muxx.Add("/a/xx/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(700) })
-	muxx.Add("/a/yy/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(701) })
-	muxx.Add("/rtyrtyabc/def/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(702) })
+	muxx.AddRoute("/country/:par/money/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(699) })
+	muxx.AddRoute("/a/xx/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(700) })
+	muxx.AddRoute("/a/yy/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(701) })
+	muxx.AddRoute("/rtyrtyabc/def/:par", func(rw http.ResponseWriter, req *http.Request, r *Router) { rw.WriteHeader(702) })
 	muxx.Test()
 	muxx.ServeHTTP(res, req)
 

@@ -17,14 +17,14 @@ type RxRouter struct {
 }
 
 type Options struct {
-	Verbose bool
-	AssetPaths []AssetPath
+	Verbose    bool
+	assetPaths []AssetPath
 }
 
 type AssetPath struct {
-	Prefix []byte // url prefix
+	Prefix         []byte // url prefix
 	FileSystemRoot string // file locations
-	StripSlashes int // how many slash words to strip from the url prefix
+	StripSlashes   int    // how many slash words to strip from the url prefix
 }
 
 type RouteHandler func(*fasthttp.RequestCtx, map[string]string)
@@ -77,7 +77,9 @@ func (rx *RxRouter) Start(port string) {
 
 		// Lookup
 		if route := rx.mux.Index.FindTree(ctx); route != nil {
-			fmt.Printf("route is: %s\n", route.Url())
+			if rx.Options.Verbose {
+				fmt.Printf("route is: %s\n", route.Url())
+			}
 			route.Handler(ctx, rx.mux.Params(ctx, route.Url()))
 		} else {
 			if rx.Options.Verbose {
@@ -96,7 +98,7 @@ func (rx *RxRouter) Start(port string) {
 // See if we match a file handler - First match is the one we use
 func (rx *RxRouter) GetFSHandler(ctx *fasthttp.RequestCtx) (handler fasthttp.RequestHandler, ok bool) {
 	path := ctx.Path()
-	for _, astPath := range rx.Options.AssetPaths {
+	for _, astPath := range rx.Options.assetPaths {
 		if bytes.HasPrefix(path, astPath.Prefix) {
 			return fasthttp.FSHandler(astPath.FileSystemRoot, astPath.StripSlashes), true
 		}
@@ -109,6 +111,18 @@ func (rx *RxRouter) Default(ctx *fasthttp.RequestCtx) {
 	ctx.SetStatusCode(fasthttp.StatusNotFound)
 }
 
-func (rx *RxRouter) Add(path string, handler RouteHandler) {
+// Map a handler to a route
+func (rx *RxRouter) AddRoute(path string, handler RouteHandler) {
 	rx.mux.Add(path, handler)
+}
+
+// Add a route to static files
+// Prefix is a starting portion of the URL delimited by slashes
+// fsRoot is the path to the top-level folder to serve files from
+// StripSlashes is the number of slash delimited tokens to remove from the URL
+// before appending it to the fsRoot to form the full file path
+// Todo - example
+func (rx *RxRouter) AddStaticFilesRoute(prefix, fsRoot string, slashesToStrip int) {
+	ap := AssetPath{Prefix: []byte(prefix), FileSystemRoot: fsRoot, StripSlashes: slashesToStrip}
+	rx.Options.assetPaths = append(rx.Options.assetPaths, ap)
 }

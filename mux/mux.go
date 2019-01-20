@@ -20,7 +20,7 @@ func New() *Mux {
 	return &Mux{}
 }
 
-// Add - add a rule specifying the handler (the default method - GET, ID - as a string to this rule)
+// AddRoute - add a rule specifying the handler (the default method - GET, ID - as a string to this rule)
 func (m *Mux) Add(url string, handler func(*fasthttp.RequestCtx, map[string]string)) *route {
 	if len(url) > HTTP_PATTERN_COUNT {
 		panic("URL is too long")
