@@ -18,6 +18,7 @@ type RxRouter struct {
 
 type Options struct {
 	Verbose    bool
+	Port string
 	assetPaths []AssetPath
 }
 
@@ -36,6 +37,8 @@ type MiddleWare struct {
 	FailCode int
 }
 
+// Create a new router instance
+// Afterwards you will want to add some routes then call the instance's Start()
 func New(opts ...Options) *RxRouter {
 	mx := &mux.Mux{}
 	r := RxRouter{mux: mx}
@@ -45,11 +48,14 @@ func New(opts ...Options) *RxRouter {
 	return &r
 }
 
+// Add a middleware function before regular routes
+// failCode is the htttp response code to return if we are immediately stopping the request
 func (rx *RxRouter) Use(m MiddleWareFunc, failCode int) {
 	rx.middlewares = append(rx.middlewares, MiddleWare{MidFunc: m, FailCode: failCode})
 }
 
-func (rx *RxRouter) Start(port string) {
+// Start serving routes
+func (rx *RxRouter) Start() {
 	if rx.Options.Verbose {
 		fmt.Println("Compiling routes...")
 	}
@@ -90,9 +96,9 @@ func (rx *RxRouter) Start(port string) {
 	}
 
 	if rx.Options.Verbose {
-		fmt.Println("RxRouter is listening on port " + port)
+		fmt.Println("RxRouter is listening on port " + rx.Options.Port)
 	}
-	log.Fatal(fasthttp.ListenAndServe(":"+port, reqHandler))
+	log.Fatal(fasthttp.ListenAndServe(":"+rx.Options.Port, reqHandler))
 }
 
 // See if we match a file handler - First match is the one we use
