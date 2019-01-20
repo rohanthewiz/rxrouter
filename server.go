@@ -4,13 +4,16 @@ package rxrouter
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"github.com/rohanthewiz/rxrouter/mux"
 	"github.com/valyala/fasthttp"
 	"log"
+	"net"
 )
 
 const defaultPort = "3020"
+const defaultTLSPort = "443"
 
 type RxRouter struct {
 	Options     Options
@@ -21,6 +24,7 @@ type RxRouter struct {
 type Options struct {
 	Verbose    bool
 	Port string
+	TLSCfg *tls.Config
 	assetPaths []AssetPath
 }
 
@@ -101,7 +105,20 @@ func (rx *RxRouter) Start() {
 		fmt.Println("RxRouter is listening on port " + rx.Options.Port)
 	}
 	if rx.Options.Port == "" { rx.Options.Port = defaultPort }
-	log.Fatal(fasthttp.ListenAndServe(":"+rx.Options.Port, reqHandler))
+
+	if rx.Options.TLSCfg != nil {
+		if rx.Options.Port == "" { rx.Options.Port = defaultTLSPort }
+		ln, err := net.Listen("tcp4", "0.0.0.0." + rx.Options.Port)
+		if err != nil {
+			panic(err)
+		} // todo - better handling of err
+		lnTls := tls.NewListener(ln, rx.Options.TLSCfg)
+		if err := fasthttp.Serve(lnTls, reqHandler); err != nil {
+			panic(err) // todo - better handling here too
+		}
+	} else {
+		log.Fatal(fasthttp.ListenAndServe(":"+rx.Options.Port, reqHandler))
+	}
 }
 
 // See if we match a file handler - First match is the one we use
