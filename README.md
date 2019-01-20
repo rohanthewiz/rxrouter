@@ -1,44 +1,20 @@
 RxRouter is a simple and fast HTTP router for Go. RxRouter is a marriage of the Bxog request multiplexer (one of the fastest muxes) to fasthttp server.
-All credit goes to [Valyala] (https://github.com/valyala) and [Claygod] (https://github.com/claygod)
+Credit goes to [Valyala] (https://github.com/valyala) for fasthttp and [Claygod] (https://github.com/claygod) for Bxog
 
-[![API documentation](https://godoc.org/github.com/claygod/Bxog?status.svg)](https://godoc.org/github.com/claygod/Bxog)
-[![Go Report Card](https://goreportcard.com/badge/github.com/claygod/Bxog)](https://goreportcard.com/report/github.com/claygod/Bxog)
+[![API documentation](https://godoc.org/github.com/rohanthewiz/rxrouter?status.svg)](https://godoc.org/github.com/rohanthewiz/rxrouter)
 
 ## Warning: Currently this is totally a POC -- do not use in production!
 
 ## Usage
-
-An example of using the multiplexer:
-See: https://github.com/rohanthewiz/rxrun
+Please see this example: https://github.com/rohanthewiz/rxrun
 
 # Settings
+Settings are passed into the rxrouter.New() function
 
-Necessary changes in the configuration of the multiplexer can be made in the configuration file
+# Performance
+Since we are based on perhaps the fastest http package (fasthttp) and one of the fastest route multiplexers available (Bxog),
+we should be hitting some high marks. A benchmark is on the todo.
 
-# Perfomance
-
-Bxog is the fastest mux, showing the speed of query processing. The benchmark results show how it compares with popular multiplexers: Bone, Httprouter, Gorilla, Zeus. The test is done on a computer with a i3-6320 3.7GHz processor and 8 GB RAM. In short (less time, the better):
-
-- Bxog 163 ns/op
-- HttpRouter 183 ns/op
-- Zeus 12302 ns/op
-- GorillaMux 14928 ns/op
-- GorillaPat 618 ns/op
-- Bone 47333 ns/op
-
-Detailed benchmark [here](https://github.com/claygod/BxogTest)
-
-# API
-
-Methods:
--  *New* - create a new multiplexer
--  *Add* - add a rule specifying the handler (the default method - GET, ID - as a string to this rule)
--  *Start* - start the server indicating the listening port
--  *Params* - extract parameters from URL
--  *Create* - generate URL of the available options
--  *Shutdown* - graceful stop the server
--  *Stop* - aggressive stop the server
--  *Test* - Start analogue (for testing only)
 
 Example:
 
@@ -48,48 +24,56 @@ package main
 import (
 	"fmt"
 	"github.com/rohanthewiz/rxrouter"
-	"github.com/rohanthewiz/rxrouter/mux"
 	"github.com/valyala/fasthttp"
 	"log"
 )
 
-const appEnv = "[DEV]"
-const authed = true
-
 func main() {
-	rx := rxrouter.New()
+	rx := rxrouter.New(
+		rxrouter.Options{Verbose: false, Port: "3026"}, // the Options argument here is optional
+	)
 
-	// Rudimentary request logging middleware
-	rx.Use(func(ctx *fasthttp.RequestCtx) (retCtx *fasthttp.RequestCtx, ok bool) {
-		log.Printf("Requested path: %s", ctx.Path())
-		return ctx, true
-	}, fasthttp.StatusServiceUnavailable) // 503
+	// Logging middleware
+	rx.Use(
+		func(ctx *fasthttp.RequestCtx) (ok bool) {
+			log.Printf("Requested path: %s", ctx.Path())
+			return true
+		},
+		fasthttp.StatusServiceUnavailable, // 503
+	)
 
 	// Auth middleware
-	rx.Use(func(ctx *fasthttp.RequestCtx) (retCtx *fasthttp.RequestCtx, ok bool) {
-		if !authed { return ctx, false }
-		return ctx, true
-	}, fasthttp.StatusUnauthorized)
-
-	// Prepend to output middleware
-	rx.Use(func(ctx *fasthttp.RequestCtx) (retCtx *fasthttp.RequestCtx, ok bool) {
-		_, _ = fmt.Fprintf(ctx, "%s ", appEnv)
-		return ctx, true
-	}, fasthttp.StatusNotImplemented)
-
+	rx.Use(
+		func(ctx *fasthttp.RequestCtx) (ok bool) {
+			authed := true // pretend we got a good response from our auth check
+			if !authed {
+				return false
+			}
+			return true
+		},
+		fasthttp.StatusUnauthorized,
+	)
 
 	// Add some routes
-	rx.Mux.Add("/", func (ctx *fasthttp.RequestCtx, mx *mux.Mux) {
-		_, _ = fmt.Fprintf(ctx, "Hello, world! Requested path is %q", ctx.Path())
+	rx.AddRoute("/", func(ctx *fasthttp.RequestCtx, params map[string]string) {
+		fmt.Fprintf(ctx, "Hello, world! Requested path is %q", ctx.Path())
 	})
-	rx.Mux.Add("/abc", handleABC)
-
+	rx.AddRoute("/hello/:name/:age", handleHello)
+	rx.AddRoute("/store/:number/:location", handleStore)
+	// Routes for static files
+	rx.AddStaticFilesRoute("/images/", "./assets/images", 1)
+	rx.AddStaticFilesRoute("/css/", "./assets/css", 1)
 
 	// Let it rip!
-	rx.Start("3020")
+	rx.Start()
 }
-func handleABC(ctx *fasthttp.RequestCtx, mx *mux.Mux) {
-	_, _ = fmt.Fprintf(ctx, "Hello ABC! Requested path is %q", ctx.Path())
+
+func handleHello(ctx *fasthttp.RequestCtx, params map[string]string) {
+	ctx.WriteString(fmt.Sprintf("Hello %s", params["name"]))
+}
+
+func handleStore(ctx *fasthttp.RequestCtx, params map[string]string) {
+	fmt.Fprintf(ctx, "Store: %s  location: %s", params["number"], params["location"])
 }
 ```
 
@@ -98,5 +82,12 @@ func handleABC(ctx *fasthttp.RequestCtx, mx *mux.Mux) {
 Arguments in the rules designated route colon. Example route: */abc/:param* , where *abc* is a static section and *:param* - the dynamic section(argument).
 
 # Static files
+Use the AddStaticFilesRoute method. Example: `rx.AddStaticFilesRoute("/images/", "./assets/images", 1)`
 
-The directory path to the file and its nickname as part of URL specified in the configuration file. This constants *FILE_PREF* and *FILE_PATH*
+# API
+
+Methods:
+-  *New* - create a new router passing in options (including port)
+-  *AddRoute* - add a rule specifying the handler
+-  *AddStaticFilesRoute* - add a route for serving static files
+-  *Start* - start the server

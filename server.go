@@ -10,6 +10,8 @@ import (
 	"log"
 )
 
+const defaultPort = "3020"
+
 type RxRouter struct {
 	Options     Options
 	mux         *mux.Mux
@@ -98,6 +100,7 @@ func (rx *RxRouter) Start() {
 	if rx.Options.Verbose {
 		fmt.Println("RxRouter is listening on port " + rx.Options.Port)
 	}
+	if rx.Options.Port == "" { rx.Options.Port = defaultPort }
 	log.Fatal(fasthttp.ListenAndServe(":"+rx.Options.Port, reqHandler))
 }
 
