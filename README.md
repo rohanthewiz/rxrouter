@@ -30,7 +30,7 @@ import (
 
 func main() {
 	rx := rxrouter.New(
-		rxrouter.Options{Verbose: false, Port: "3026"}, // the Options argument here is optional
+		rxrouter.Options{Verbose: true, Port: "3026"}, // the Options argument here is optional
 	)
 
 	// Logging middleware
