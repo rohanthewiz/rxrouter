@@ -11,6 +11,8 @@ import (
 )
 
 const defaultPort = "3020"
+const defaultTLSPort = "443"
+const ipAny = "0.0.0.0"
 
 type RxRouter struct {
 	Options     Options
@@ -20,8 +22,19 @@ type RxRouter struct {
 
 type Options struct {
 	Verbose    bool
-	Port string
+	Port       string
+	TLS        RxTLS
 	assetPaths []AssetPath
+}
+
+// Specify whether to use TLS and
+// CertFile and KeyFile or CertData and KeyData (for embedded certs)
+type RxTLS struct {
+	UseTLS   bool
+	CertFile string
+	KeyFile  string
+	CertData []byte
+	KeyData  []byte
 }
 
 type AssetPath struct {
@@ -96,12 +109,39 @@ func (rx *RxRouter) Start() {
 			rx.Default(ctx)
 		}
 	}
+	if rx.Options.Port == "" {
+		if rx.Options.TLS.UseTLS {
+			rx.Options.Port = defaultTLSPort
+		} else {
+			rx.Options.Port = defaultPort
+		}
+	}
 
 	if rx.Options.Verbose {
 		fmt.Println("RxRouter is listening on port " + rx.Options.Port)
 	}
-	if rx.Options.Port == "" { rx.Options.Port = defaultPort }
-	log.Fatal(fasthttp.ListenAndServe(":"+rx.Options.Port, reqHandler))
+
+	if rx.Options.TLS.UseTLS && rx.Options.TLS.CertFile != "" {
+		log.Fatal(fasthttp.ListenAndServeTLS(ipAny+":"+rx.Options.Port, rx.Options.TLS.CertFile,
+			rx.Options.TLS.KeyFile, reqHandler))
+	} else if rx.Options.TLS.UseTLS && len(rx.Options.TLS.CertData) > 0 {
+		log.Fatal(fasthttp.ListenAndServeTLSEmbed(ipAny+":"+rx.Options.Port, rx.Options.TLS.CertData,
+			rx.Options.TLS.KeyData, reqHandler))
+
+		//if rx.Options.Port == "" {
+		//	rx.Options.Port = defaultTLSPort
+		//}
+		//ln, err := net.Listen("tcp4", "0.0.0.0:"+rx.Options.Port)
+		//if err != nil {
+		//	panic(err)
+		//} // todo - better handling of err
+		//lnTls := tls.NewListener(ln, rx.Options.TLSCfg)
+		//if err := fasthttp.Serve(lnTls, reqHandler); err != nil {
+		//	panic(err) // todo - better handling here too
+		//}
+	} else {
+		log.Fatal(fasthttp.ListenAndServe(":"+rx.Options.Port, reqHandler))
+	}
 }
 
 // See if we match a file handler - First match is the one we use
