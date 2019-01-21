@@ -4,12 +4,10 @@ package rxrouter
 
 import (
 	"bytes"
-	"crypto/tls"
 	"fmt"
 	"github.com/rohanthewiz/rxrouter/mux"
 	"github.com/valyala/fasthttp"
 	"log"
-	"net"
 )
 
 const defaultPort = "3020"
@@ -24,8 +22,18 @@ type RxRouter struct {
 type Options struct {
 	Verbose    bool
 	Port       string
-	TLSCfg     *tls.Config
+	TLS        RxTLS
 	assetPaths []AssetPath
+}
+
+// Specify whether to use TLS and
+// CertFile and KeyFile or CertData and KeyData (for embedded certs)
+type RxTLS struct {
+	UseTLS   bool
+	CertFile string
+	KeyFile  string
+	CertData []byte
+	KeyData  []byte
 }
 
 type AssetPath struct {
@@ -108,18 +116,22 @@ func (rx *RxRouter) Start() {
 		rx.Options.Port = defaultPort
 	}
 
-	if rx.Options.TLSCfg != nil {
-		if rx.Options.Port == "" {
-			rx.Options.Port = defaultTLSPort
-		}
-		ln, err := net.Listen("tcp4", "0.0.0.0:"+rx.Options.Port)
-		if err != nil {
-			panic(err)
-		} // todo - better handling of err
-		lnTls := tls.NewListener(ln, rx.Options.TLSCfg)
-		if err := fasthttp.Serve(lnTls, reqHandler); err != nil {
-			panic(err) // todo - better handling here too
-		}
+	if rx.Options.TLS.UseTLS && rx.Options.TLS.CertFile != "" {
+		log.Fatal(fasthttp.ListenAndServeTLS("/", rx.Options.TLS.CertFile, rx.Options.TLS.KeyFile, reqHandler))
+	} else if rx.Options.TLS.UseTLS && len(rx.Options.TLS.CertData) > 0 {
+		log.Fatal(fasthttp.ListenAndServeTLSEmbed("/", rx.Options.TLS.CertData, rx.Options.TLS.KeyData, reqHandler))
+
+		//if rx.Options.Port == "" {
+		//	rx.Options.Port = defaultTLSPort
+		//}
+		//ln, err := net.Listen("tcp4", "0.0.0.0:"+rx.Options.Port)
+		//if err != nil {
+		//	panic(err)
+		//} // todo - better handling of err
+		//lnTls := tls.NewListener(ln, rx.Options.TLSCfg)
+		//if err := fasthttp.Serve(lnTls, reqHandler); err != nil {
+		//	panic(err) // todo - better handling here too
+		//}
 	} else {
 		log.Fatal(fasthttp.ListenAndServe(":"+rx.Options.Port, reqHandler))
 	}
