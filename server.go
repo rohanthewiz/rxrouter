@@ -12,6 +12,7 @@ import (
 
 const defaultPort = "3020"
 const defaultTLSPort = "443"
+const ipAny = "0.0.0.0"
 
 type RxRouter struct {
 	Options     Options
@@ -113,13 +114,19 @@ func (rx *RxRouter) Start() {
 		fmt.Println("RxRouter is listening on port " + rx.Options.Port)
 	}
 	if rx.Options.Port == "" {
-		rx.Options.Port = defaultPort
+		if rx.Options.TLS.UseTLS {
+			rx.Options.Port = defaultTLSPort
+		} else {
+			rx.Options.Port = defaultPort
+		}
 	}
 
 	if rx.Options.TLS.UseTLS && rx.Options.TLS.CertFile != "" {
-		log.Fatal(fasthttp.ListenAndServeTLS("/", rx.Options.TLS.CertFile, rx.Options.TLS.KeyFile, reqHandler))
+		log.Fatal(fasthttp.ListenAndServeTLS(ipAny+":"+rx.Options.Port, rx.Options.TLS.CertFile,
+			rx.Options.TLS.KeyFile, reqHandler))
 	} else if rx.Options.TLS.UseTLS && len(rx.Options.TLS.CertData) > 0 {
-		log.Fatal(fasthttp.ListenAndServeTLSEmbed("/", rx.Options.TLS.CertData, rx.Options.TLS.KeyData, reqHandler))
+		log.Fatal(fasthttp.ListenAndServeTLSEmbed(ipAny+":"+rx.Options.Port, rx.Options.TLS.CertData,
+			rx.Options.TLS.KeyData, reqHandler))
 
 		//if rx.Options.Port == "" {
 		//	rx.Options.Port = defaultTLSPort
