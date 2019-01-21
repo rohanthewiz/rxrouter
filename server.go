@@ -109,16 +109,16 @@ func (rx *RxRouter) Start() {
 			rx.Default(ctx)
 		}
 	}
-
-	if rx.Options.Verbose {
-		fmt.Println("RxRouter is listening on port " + rx.Options.Port)
-	}
 	if rx.Options.Port == "" {
 		if rx.Options.TLS.UseTLS {
 			rx.Options.Port = defaultTLSPort
 		} else {
 			rx.Options.Port = defaultPort
 		}
+	}
+
+	if rx.Options.Verbose {
+		fmt.Println("RxRouter is listening on port " + rx.Options.Port)
 	}
 
 	if rx.Options.TLS.UseTLS && rx.Options.TLS.CertFile != "" {
