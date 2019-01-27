@@ -20,11 +20,11 @@ type RxRouter struct {
 }
 
 type Options struct {
-	Verbose    bool
-	Port       string
-	TLS        RxTLS
-	assetPaths []AssetPath
-	CustomMasterRequestHandler fasthttp.RequestHandler
+	Verbose             bool
+	Port                string
+	TLS                 RxTLS
+	assetPaths          []AssetPath
+	CustomMasterHandler *fasthttp.RequestHandler
 }
 
 // Specify whether to use TLS and
@@ -36,7 +36,6 @@ type RxTLS struct {
 	CertData []byte
 	KeyData  []byte
 }
-
 
 type RouteHandler func(*fasthttp.RequestCtx, map[string]string)
 
@@ -52,6 +51,7 @@ func New(opts ...Options) *RxRouter {
 }
 
 // Start serving routes
+// Todo - check if we really need to pass a pointer to rx here
 func (rx *RxRouter) Start() {
 	if rx.Options.Verbose {
 		fmt.Println("Compiling routes...")
@@ -61,8 +61,8 @@ func (rx *RxRouter) Start() {
 	var reqHandler fasthttp.RequestHandler
 
 	// Master handler - select and run a handler on the passed ctx
-	if rx.Options.CustomMasterRequestHandler != nil {
-		reqHandler = rx.Options.CustomMasterRequestHandler
+	if rx.Options.CustomMasterHandler != nil {
+		reqHandler = *rx.Options.CustomMasterHandler
 	} else {
 		reqHandler = func(ctx *fasthttp.RequestCtx) {
 			// Middleware - they modify ctx or fail with the provided code
@@ -115,6 +115,10 @@ func (rx *RxRouter) Start() {
 	} else {
 		log.Fatal(fasthttp.ListenAndServe(":"+rx.Options.Port, reqHandler))
 	}
+}
+
+func (rx *RxRouter) AddCustomMasterHandler(mh *fasthttp.RequestHandler) {
+	rx.Options.CustomMasterHandler = mh
 }
 
 // Default Handler
