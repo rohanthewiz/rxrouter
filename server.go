@@ -24,7 +24,7 @@ type Options struct {
 	Port                string
 	TLS                 RxTLS
 	assetPaths          []AssetPath
-	CustomMasterHandler *fasthttp.RequestHandler
+	CustomMasterHandler fasthttp.RequestHandler
 }
 
 // Specify whether to use TLS and
@@ -62,7 +62,7 @@ func (rx *RxRouter) Start() {
 
 	// Master handler - select and run a handler on the passed ctx
 	if rx.Options.CustomMasterHandler != nil {
-		reqHandler = *rx.Options.CustomMasterHandler
+		reqHandler = rx.Options.CustomMasterHandler
 	} else {
 		reqHandler = func(ctx *fasthttp.RequestCtx) {
 			// Middleware - they modify ctx or fail with the provided code
@@ -117,7 +117,7 @@ func (rx *RxRouter) Start() {
 	}
 }
 
-func (rx *RxRouter) AddCustomMasterHandler(mh *fasthttp.RequestHandler) {
+func (rx *RxRouter) AddCustomMasterHandler(mh fasthttp.RequestHandler) {
 	rx.Options.CustomMasterHandler = mh
 }
 
