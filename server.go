@@ -4,9 +4,10 @@ package rxrouter
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/rohanthewiz/rxrouter/mux"
 	"github.com/valyala/fasthttp"
-	"log"
 )
 
 const defaultPort = "3020"
@@ -39,11 +40,10 @@ type RxTLS struct {
 
 type RouteHandler func(*fasthttp.RequestCtx, map[string]string)
 
-// Create a new router instance
+// New creates a new router instance
 // Afterwards you will want to add some routes then call the instance's Start()
 func New(opts ...Options) *RxRouter {
-	mx := &mux.Mux{}
-	r := RxRouter{mux: mx}
+	r := RxRouter{mux: &mux.Mux{}}
 	if len(opts) > 0 {
 		r.Options = opts[0]
 	}
@@ -51,47 +51,19 @@ func New(opts ...Options) *RxRouter {
 }
 
 // Start serving routes
-// Todo - check if we really need to pass a pointer to rx here
 func (rx *RxRouter) Start() {
 	if rx.Options.Verbose {
 		fmt.Println("Compiling routes...")
 	}
-	rx.mux.Load() // create new index; compile routes
+	rx.LoadRoutes()
 
 	var reqHandler fasthttp.RequestHandler
 
-	// Master handler - select and run a handler on the passed ctx
+	// Master handler
 	if rx.Options.CustomMasterHandler != nil {
 		reqHandler = *rx.Options.CustomMasterHandler
 	} else {
-		reqHandler = func(ctx *fasthttp.RequestCtx) {
-			// Middleware - they modify ctx or fail with the provided code
-			var ok bool
-			for _, mw := range rx.middlewares {
-				if ok = mw.MidFunc(ctx); !ok {
-					ctx.SetStatusCode(mw.FailCode) // for now
-					return
-				}
-			}
-			// See if we match a file handler
-			fileHander, ok := rx.GetFSHandler(ctx)
-			if ok {
-				fileHander(ctx)
-				return
-			}
-			// Route Lookup
-			if route := rx.mux.Index.FindTree(ctx); route != nil {
-				if rx.Options.Verbose {
-					fmt.Printf("route is: %s\n", route.Url())
-				}
-				route.Handler(ctx, rx.mux.Params(ctx, route.Url()))
-			} else {
-				if rx.Options.Verbose {
-					fmt.Println("Unknown route", string(ctx.Path()))
-				}
-				rx.Default(ctx)
-			}
-		}
+		reqHandler = InitStdMasterHandler(rx)
 	}
 
 	if rx.Options.Port == "" {
@@ -117,6 +89,44 @@ func (rx *RxRouter) Start() {
 	}
 }
 
+// LoadRoutes creates new index and compiles routes
+func (rx *RxRouter) LoadRoutes() {
+	rx.mux.Load()
+}
+
+func InitStdMasterHandler(rx *RxRouter) fasthttp.RequestHandler {
+	return func(ctx *fasthttp.RequestCtx) {
+		// Middlewares - they modify ctx or fail with the provided code
+		var ok bool
+		for _, mw := range rx.middlewares {
+			if ok = mw.MidFunc(ctx); !ok {
+				ctx.SetStatusCode(mw.FailCode) // for now
+				return
+			}
+		}
+
+		// See if we match a file handler
+		fileHander, ok := rx.GetFSHandler(ctx)
+		if ok {
+			fileHander(ctx)
+			return
+		}
+
+		// Route Lookup
+		if route := rx.mux.Index.FindTree(ctx); route != nil {
+			if rx.Options.Verbose {
+				fmt.Printf("route is: %s\n", route.Url())
+			}
+			route.Handler(ctx, rx.mux.Params(ctx, route.Url()))
+		} else {
+			if rx.Options.Verbose {
+				fmt.Println("Unknown route", string(ctx.Path()))
+			}
+			rx.Default(ctx)
+		}
+	}
+}
+
 func (rx *RxRouter) AddCustomMasterHandler(mh *fasthttp.RequestHandler) {
 	rx.Options.CustomMasterHandler = mh
 }
@@ -126,7 +136,7 @@ func (rx *RxRouter) Default(ctx *fasthttp.RequestCtx) {
 	ctx.SetStatusCode(fasthttp.StatusNotFound)
 }
 
-// Map a handler to a route
+// AddRoute maps a handler to a route
 func (rx *RxRouter) AddRoute(path string, handler RouteHandler) {
 	rx.mux.Add(path, handler)
 }
