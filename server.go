@@ -127,7 +127,7 @@ func InitStdMasterHandler(rx *RxRouter) fasthttp.RequestHandler {
 	}
 }
 
-func (rx *RxRouter) AddCustomMasterHandler(mh *fasthttp.RequestHandler) {
+func (rx *RxRouter) CustomMasterHandler(mh *fasthttp.RequestHandler) {
 	rx.Options.CustomMasterHandler = mh
 }
 

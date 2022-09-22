@@ -13,7 +13,7 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-// ServerTestRunner will a test on the passed in rxrouter
+// RunServerTest will run a test on the passed in rxrouter
 // An rxrouter with added routes is the first arg;
 // the request containing the endpoint to test is the second arg
 //
@@ -23,7 +23,7 @@ import (
 // 		  _, _ = ctx.WriteString(fmt.Sprintf("Hello %s. You are %s!", params["name"], params["age"]))
 //		}
 // })
-func ServerTestRunner(rx *RxRouter, req *http.Request) (resp []byte, err error) {
+func RunServerTest(rx *RxRouter, req *http.Request) (resp []byte, err error) {
 	if req.Header.Get(constants.HeaderContentType) == "" {
 		req.Header.Add(constants.HeaderContentType, constants.ContentTypeText)
 	}
