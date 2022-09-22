@@ -9,24 +9,26 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/rohanthewiz/rxrouter/core/constants"
 	"github.com/rohanthewiz/rxrouter/test_helpers"
 	"github.com/valyala/fasthttp"
 )
-
-const HeaderContentLength = "Content-Length"
 
 func TestThatServerWorks(t *testing.T) {
 	// t.Parallel() // ?
 
 	req := httptest.NewRequest("GET", "/hello/john/24", nil)
-	req.Header.Set("content-type", "text/html") // "application/json"
 
-	// Add Content-Length if not provided with header
-	if req.Body != http.NoBody && req.Header.Get(HeaderContentLength) == "" {
-		req.Header.Add(HeaderContentLength, strconv.FormatInt(req.ContentLength, 10))
+	// FIXUPS
+
+	if req.Header.Get(constants.HeaderContentType) == "" {
+		req.Header.Add(constants.HeaderContentType, constants.ContentTypeText)
 	}
 
-	// Dump raw http request
+	if req.Body != http.NoBody && req.Header.Get(constants.HeaderContentLength) == "" {
+		req.Header.Add(constants.HeaderContentLength, strconv.FormatInt(req.ContentLength, 10))
+	}
+
 	reqRaw, err := httputil.DumpRequest(req, true)
 	if err != nil {
 		t.Fatalf("Error obtaining raw HTTP request: %v", reqRaw)
@@ -46,7 +48,7 @@ func TestThatServerWorks(t *testing.T) {
 	getResp := func() []byte {
 		cw := &test_helpers.ConnWrap{}
 		cw.R.Write(reqRaw)
-		// cw.R.WriteString("GET /hello/john/24 HTTP/1.1\r\nHost: localhost\r\n\r\n")
+		// Example: cw.R.WriteString("GET /hello/john/24 HTTP/1.1\r\nHost: localhost\r\n\r\n")
 
 		if err := s.ServeConn(cw); err != nil {
 			t.Fatalf("Unexpected error from serveConn: %v", err)
