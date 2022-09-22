@@ -1,8 +1,10 @@
 LICENSE
 
 Current work by Rohan Allison: github.com/rohanthewiz
-Original Copyright (c) 2016-2018 Eduard Sesigin. All rights reserved. Contacts: <claygod@yandex.ru>
 
+Routing multiplexer - Original copyright (c) 2016-2018 Eduard Sesigin. All rights reserved. Contacts: <claygod@yandex.ru>
+
+---
 The license for this software and associated documentation files (the "Software").
 
 "Software" is available under different licensing options designed to accommodate the needs of our various users:
