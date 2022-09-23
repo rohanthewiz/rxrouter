@@ -39,29 +39,29 @@ func TestThatServerWorks(t *testing.T) {
 	rx.AddRoute("/hello/:name/:age", func(ctx *fasthttp.RequestCtx, params map[string]string) {
 		_, _ = ctx.WriteString(fmt.Sprintf("Hello %s. You are %s!", params["name"], params["age"]))
 	})
+
 	rx.LoadRoutes()
 
 	s := &fasthttp.Server{
 		Handler: InitStdMasterHandler(rx),
 	}
 
-	getResp := func() []byte {
-		cw := &test_helpers.ConnWrap{}
-		cw.R.Write(reqRaw)
-		// Example: cw.R.WriteString("GET /hello/john/24 HTTP/1.1\r\nHost: localhost\r\n\r\n")
+	cw := &test_helpers.ConnWrap{}
+	cw.R.Write(reqRaw)
+	// Example: cw.R.WriteString("GET /hello/john/24 HTTP/1.1\r\nHost: localhost\r\n\r\n")
 
-		if err := s.ServeConn(cw); err != nil {
-			t.Fatalf("Unexpected error from serveConn: %v", err)
-		}
-
-		resp, err := ioutil.ReadAll(&cw.W)
-		if err != nil {
-			t.Fatalf("Unexpected error from ReadAll: %v", err)
-		}
-		return resp
+	if err := s.ServeConn(cw); err != nil {
+		t.Fatalf("Unexpected error from serveConn: %v", err)
 	}
 
-	resp := getResp()
+	body, err := ioutil.ReadAll(&cw.W)
+	if err != nil {
+		t.Fatalf("Unexpected error from ReadAll: %v", err)
+	}
 
-	fmt.Println("**-> Server resp", string(resp))
+	/*	fresp := fasthttp.Response{}
+		fresp.SetBodyRaw(body)
+		fmt.Printf("**-> StatusCode: %d\n", fresp.StatusCode())
+	*/
+	fmt.Println("**-> Server resp", string(body))
 }

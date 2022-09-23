@@ -114,10 +114,10 @@ func InitStdMasterHandler(rx *RxRouter) fasthttp.RequestHandler {
 
 		// Route Lookup
 		if route := rx.mux.Index.FindTree(ctx); route != nil {
-			if rx.Options.Verbose {
-				fmt.Printf("route is: %s\n", route.Url())
-			}
 			route.Handler(ctx, rx.mux.Params(ctx, route.Url()))
+			if rx.Options.Verbose {
+				fmt.Printf("Status: %d <- %s\n", ctx.Response.StatusCode(), route.Url())
+			}
 		} else {
 			if rx.Options.Verbose {
 				fmt.Println("Unknown route", string(ctx.Path()))

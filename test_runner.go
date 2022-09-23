@@ -13,9 +13,10 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-// RunServerTest will run a test on the passed in rxrouter
+// RunServerTest will test an endpoint on the passed in rxrouter
 // An rxrouter with added routes is the first arg;
 // the request containing the endpoint to test is the second arg
+// See github.com/rohanthewiz/rxrun for example usage
 //
 // rx := New(Options{Verbose: true})
 // rx.AddRoute("/hello/:name/:age",
@@ -23,7 +24,7 @@ import (
 // 		  _, _ = ctx.WriteString(fmt.Sprintf("Hello %s. You are %s!", params["name"], params["age"]))
 //		}
 // })
-func RunServerTest(rx *RxRouter, req *http.Request) (resp []byte, err error) {
+func RunServerTest(rx *RxRouter, req *http.Request) (resp *fasthttp.Response, err error) {
 	if req.Header.Get(constants.HeaderContentType) == "" {
 		req.Header.Add(constants.HeaderContentType, constants.ContentTypeText)
 	}
@@ -38,13 +39,13 @@ func RunServerTest(rx *RxRouter, req *http.Request) (resp []byte, err error) {
 			"request", fmt.Sprintf("%v", req))
 	}
 
-	rx.LoadRoutes()
+	rx.LoadRoutes() // compile routes
 
 	s := &fasthttp.Server{
-		Handler: InitStdMasterHandler(rx),
+		Handler: InitStdMasterHandler(rx), // Standard route table handling
 	}
 
-	cw := &test_helpers.ConnWrap{}
+	cw := &test_helpers.ConnWrap{} // connection obj for testing
 	cw.R.Write(reqRaw)
 
 	if err := s.ServeConn(cw); err != nil {
@@ -52,10 +53,14 @@ func RunServerTest(rx *RxRouter, req *http.Request) (resp []byte, err error) {
 			"request", fmt.Sprintf("%v", req))
 	}
 
-	resp, err = ioutil.ReadAll(&cw.W)
+	body, err := ioutil.ReadAll(&cw.W)
 	if err != nil {
 		return resp, rerr.Wrap(err, "Unexpected error from ReadAll",
 			"request", fmt.Sprintf("%v", req))
 	}
+
+	resp.SetBodyRaw(body)
+	// fmt.Printf("**-> StatusCode: %d\n", resp.StatusCode())
+
 	return
 }
