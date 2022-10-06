@@ -59,6 +59,7 @@ func RunServerTest(rx *RxRouter, req *http.Request) (resp *fasthttp.Response, er
 			"request", fmt.Sprintf("%v", req))
 	}
 
+	resp = &fasthttp.Response{}
 	resp.SetBodyRaw(body)
 	// fmt.Printf("**-> StatusCode: %d\n", resp.StatusCode())
 

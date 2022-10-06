@@ -57,13 +57,13 @@ func (rx *RxRouter) Start() {
 	}
 	rx.LoadRoutes()
 
-	var reqHandler fasthttp.RequestHandler
+	var mainReqHandler fasthttp.RequestHandler
 
-	// Master handler
+	// Get Master handler
 	if rx.Options.CustomMasterHandler != nil {
-		reqHandler = *rx.Options.CustomMasterHandler
+		mainReqHandler = *rx.Options.CustomMasterHandler
 	} else {
-		reqHandler = InitStdMasterHandler(rx)
+		mainReqHandler = InitStdMasterHandler(rx)
 	}
 
 	if rx.Options.Port == "" {
@@ -80,12 +80,12 @@ func (rx *RxRouter) Start() {
 
 	if rx.Options.TLS.UseTLS && rx.Options.TLS.CertFile != "" {
 		log.Fatal(fasthttp.ListenAndServeTLS(ipAny+":"+rx.Options.Port, rx.Options.TLS.CertFile,
-			rx.Options.TLS.KeyFile, reqHandler))
+			rx.Options.TLS.KeyFile, mainReqHandler))
 	} else if rx.Options.TLS.UseTLS && len(rx.Options.TLS.CertData) > 0 {
 		log.Fatal(fasthttp.ListenAndServeTLSEmbed(ipAny+":"+rx.Options.Port, rx.Options.TLS.CertData,
-			rx.Options.TLS.KeyData, reqHandler))
+			rx.Options.TLS.KeyData, mainReqHandler))
 	} else {
-		log.Fatal(fasthttp.ListenAndServe(":"+rx.Options.Port, reqHandler))
+		log.Fatal(fasthttp.ListenAndServe(":"+rx.Options.Port, mainReqHandler))
 	}
 }
 
@@ -97,9 +97,8 @@ func (rx *RxRouter) LoadRoutes() {
 func InitStdMasterHandler(rx *RxRouter) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
 		// Middlewares - they modify ctx or fail with the provided code
-		var ok bool
 		for _, mw := range rx.middlewares {
-			if ok = mw.MidFunc(ctx); !ok {
+			if ok := mw.MidFunc(ctx); !ok {
 				ctx.SetStatusCode(mw.FailCode) // for now
 				return
 			}
@@ -116,11 +115,12 @@ func InitStdMasterHandler(rx *RxRouter) fasthttp.RequestHandler {
 		if route := rx.mux.Index.FindTree(ctx); route != nil {
 			route.Handler(ctx, rx.mux.Params(ctx, route.Url()))
 			if rx.Options.Verbose {
-				fmt.Printf("Status: %d <- %s\n", ctx.Response.StatusCode(), route.Url())
+				fmt.Println("Using route:", route.Url())
+				fmt.Printf("Status: %d <- %s\n", ctx.Response.StatusCode(), ctx.Path())
 			}
 		} else {
 			if rx.Options.Verbose {
-				fmt.Println("Unknown route", string(ctx.Path()))
+				fmt.Println("! Unknown route", string(ctx.Path()))
 			}
 			rx.Default(ctx)
 		}

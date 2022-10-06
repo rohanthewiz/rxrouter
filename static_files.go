@@ -2,6 +2,7 @@ package rxrouter
 
 import (
 	"bytes"
+
 	"github.com/valyala/fasthttp"
 )
 
